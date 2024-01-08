@@ -9,9 +9,14 @@
 using namespace std;
 using namespace sf;
 
+
+class Particle;
+
+
 int x_screen_dim = 1280;
 int y_screen_dim = 720;
-float t = 0.4;
+float t = 0.4; //optimum: ~0.4
+vector<Particle*> particles;
 
 
 class Particle{
@@ -41,6 +46,11 @@ class Particle{
         Vector2f* getPosition(){
             return p;
         }
+        
+        void setPosition(Vector2f p){
+            *this->p = p;
+            shape->setPosition(p);
+        }
 
         Vector2f* getNextPosition(){
             return next_p;
@@ -50,8 +60,16 @@ class Particle{
             return original_p;
         }
 
+        void setOriginalPosition(Vector2f original_p){
+            *this->original_p = original_p;
+        }
+
         Vector2f* getVelocity(){
             return v;
+        }
+
+        void setVelocity(Vector2f v){
+            *this->v = v;
         }
 
         Vector2f* getAcceleration(){
@@ -63,12 +81,12 @@ class Particle{
 
 
 void resolveCollision(float *next_p, float *original_p, float *v, float upper_bound){
-    if(*next_p>upper_bound-100 || *next_p<0){
+    if(*next_p>upper_bound || *next_p<0){
         *v=-(*v);
 
-        *original_p = upper_bound-100;
+        *next_p = upper_bound;
         if(*next_p<0){
-            *original_p=0;
+            *next_p=0;
         }
     }
 }
@@ -77,16 +95,73 @@ float nextVelocity(float *v, float *a, float t){
     return *v + (*a)*t;
 }
 
+//Returns -1 if not possible
+float getNextInc(float target, float p, float v, float a){
+    float t;
+    if(a!=0){
+        float det = pow(v,2)+2*a*(target-p);
+        if(det<0){
+            return -1;
+        }
+        
+        t = (-v+sqrt(det))/a;
+        
+    }else{
+        if(v==0){
+            return -1;
+        }
+        t = (target-p)/v;
+    }
+
+    if(t<0){
+            return -1;
+        }
+    return t;
+}
+
+float getNextInc(Vector2f next_p, Vector2f p, Vector2f v, Vector2f a){
+    float t_x,t_y;
+
+
+    float t_x1 = getNextInc(x_screen_dim-100, p.x, v.x,a.x);
+    float t_x2= getNextInc(0, p.x, v.x,a.x);
+    if(t_x1<0 || t_x2<0){
+        t_x = abs(t_x1*t_x2);
+    }
+
+
+    float t_y1 = getNextInc(y_screen_dim-100, p.y, v.y,a.y);
+    float t_y2= getNextInc(0, p.y, v.y,a.y);
+    if(t_y1<0 || t_y2<0){
+        t_y = abs(t_y1*t_y2);
+    }
+
+
+    float t_xy = min(t_x,t_y);
+
+
+    if(t_xy<t){
+        return t_xy;
+    }
+
+    return t;
+}
+
 //Next position logic
 void update(RectangleShape *rec, Vector2f *p, Vector2f *next_p, Vector2f *original_p, Vector2f *v, Vector2f *a){
     next_p->x = original_p->x + v->x * t + 0.5 * a->x * pow(t,2);
-    next_p->y = original_p->y+v->y*t + 0.5 * a->y * pow(t,2);
+    next_p->y = original_p->y + v->y * t + 0.5 * a->y * pow(t,2);
 
-    v->x = nextVelocity(&(v->x), &(a->x), t);
-    v->y = nextVelocity(&(v->y), &(a->y), t);
+    float t_inc= getNextInc(*next_p, *p,*v,*a);
+    if(t_inc<0.4){
+        cout<<"t_inc: "<<t_inc<<endl;
+    }
+    v->x = nextVelocity(&(v->x), &(a->x), t_inc);
+    v->y = nextVelocity(&(v->y), &(a->y), t_inc);
 
-    resolveCollision(&(next_p->x), &(original_p->x), &(v->x), x_screen_dim);
-    resolveCollision(&(next_p->y), &(original_p->y), &(v->y), y_screen_dim);
+    resolveCollision(&(next_p->x), &(original_p->x), &(v->x), x_screen_dim-100);
+    resolveCollision(&(next_p->y), &(original_p->y), &(v->y), y_screen_dim-100);
+
 
     original_p->y = next_p->y;
     original_p->x = next_p->x;
@@ -107,6 +182,17 @@ int main(){
 
     //Object initialization
     Particle *p = new Particle();
+    p->setPosition(Vector2f(200,320));
+    p->setOriginalPosition(Vector2f(200,320));
+    p->setVelocity(Vector2f(0,0));
+
+    Particle *p1 = new Particle();
+    p1->setPosition(Vector2f(x_screen_dim-100,620));
+    p1->setOriginalPosition(Vector2f(x_screen_dim-100,620));
+    p1->setVelocity(Vector2f(-20,0));
+
+    particles.push_back(p);
+    particles.push_back(p1);
     
     while(window.isOpen()){
         Event event;
@@ -116,10 +202,12 @@ int main(){
         }
         window.clear();
         window.draw(*(p->getShape()));
+        // window.draw(*(p1->getShape()));
         window.display();
 
         // update(rec,p,next_p,original_p,v,a);
         update(p);
+        // update(p1);
     }
 
     
