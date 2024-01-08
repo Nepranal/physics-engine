@@ -84,8 +84,10 @@ void resolveCollision(float *next_p, float *original_p, float *v, float upper_bo
     if(*next_p>upper_bound || *next_p<0){
         *v=-(*v);
 
+        
+        float temp = *next_p;
         *next_p = upper_bound;
-        if(*next_p<0){
+        if(temp<0){
             *next_p=0;
         }
     }
@@ -119,22 +121,32 @@ float getNextInc(float target, float p, float v, float a){
     return t;
 }
 
-float getNextInc(Vector2f next_p, Vector2f p, Vector2f v, Vector2f a){
-    float t_x,t_y;
-
-
-    float t_x1 = getNextInc(x_screen_dim-100, p.x, v.x,a.x);
-    float t_x2= getNextInc(0, p.x, v.x,a.x);
-    if(t_x1<0 || t_x2<0){
-        t_x = abs(t_x1*t_x2);
+float getComponentInc(float upper_bound,float p, float v, float a){
+    float t1 = getNextInc(upper_bound, p, v,a);
+    float t2= getNextInc(0, p, v, a);
+    float t;
+    if(t1<0 || t2<0){
+        t = abs(t1*t2);
     }
+    return t;
+}
+
+float getNextInc( Vector2f p, Vector2f v, Vector2f a){
 
 
-    float t_y1 = getNextInc(y_screen_dim-100, p.y, v.y,a.y);
-    float t_y2= getNextInc(0, p.y, v.y,a.y);
-    if(t_y1<0 || t_y2<0){
-        t_y = abs(t_y1*t_y2);
-    }
+   
+    float t_x = getComponentInc(x_screen_dim-100, p.x, v.x,a.x);
+    // float t_x2= getNextInc(0, p.x, v.x,a.x);
+    // if(t_x1<0 || t_x2<0){
+    //     t_x = abs(t_x1*t_x2);
+    // }
+
+
+    float t_y = getComponentInc(y_screen_dim-100, p.y, v.y,a.y);
+    // float t_y2= getNextInc(0, p.y, v.y,a.y);
+    // if(t_y1<0 || t_y2<0){
+    //     t_y = abs(t_y1*t_y2);
+    // }
 
 
     float t_xy = min(t_x,t_y);
@@ -152,10 +164,7 @@ void update(RectangleShape *rec, Vector2f *p, Vector2f *next_p, Vector2f *origin
     next_p->x = original_p->x + v->x * t + 0.5 * a->x * pow(t,2);
     next_p->y = original_p->y + v->y * t + 0.5 * a->y * pow(t,2);
 
-    float t_inc= getNextInc(*next_p, *p,*v,*a);
-    if(t_inc<0.4){
-        cout<<"t_inc: "<<t_inc<<endl;
-    }
+    float t_inc= getNextInc(*p,*v,*a);
     v->x = nextVelocity(&(v->x), &(a->x), t_inc);
     v->y = nextVelocity(&(v->y), &(a->y), t_inc);
 
@@ -182,14 +191,14 @@ int main(){
 
     //Object initialization
     Particle *p = new Particle();
-    p->setPosition(Vector2f(200,320));
-    p->setOriginalPosition(Vector2f(200,320));
-    p->setVelocity(Vector2f(0,0));
+    p->setPosition(Vector2f(200,120));
+    p->setOriginalPosition(Vector2f(200,120));
+    p->setVelocity(Vector2f(50,0));
 
     Particle *p1 = new Particle();
     p1->setPosition(Vector2f(x_screen_dim-100,620));
     p1->setOriginalPosition(Vector2f(x_screen_dim-100,620));
-    p1->setVelocity(Vector2f(-20,0));
+    p1->setVelocity(Vector2f(0,0));
 
     particles.push_back(p);
     particles.push_back(p1);
