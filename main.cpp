@@ -132,25 +132,9 @@ float getComponentInc(float upper_bound,float p, float v, float a){
 }
 
 float getNextInc( Vector2f p, Vector2f v, Vector2f a){
-
-
-   
     float t_x = getComponentInc(x_screen_dim-100, p.x, v.x,a.x);
-    // float t_x2= getNextInc(0, p.x, v.x,a.x);
-    // if(t_x1<0 || t_x2<0){
-    //     t_x = abs(t_x1*t_x2);
-    // }
-
-
     float t_y = getComponentInc(y_screen_dim-100, p.y, v.y,a.y);
-    // float t_y2= getNextInc(0, p.y, v.y,a.y);
-    // if(t_y1<0 || t_y2<0){
-    //     t_y = abs(t_y1*t_y2);
-    // }
-
-
     float t_xy = min(t_x,t_y);
-
 
     if(t_xy<t){
         return t_xy;
